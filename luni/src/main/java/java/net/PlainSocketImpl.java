@@ -39,6 +39,9 @@ import libcore.io.Libcore;
 import libcore.io.Memory;
 import libcore.io.Streams;
 import static libcore.io.OsConstants.*;
+// begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
 
 /**
  * @hide used in java.nio.
@@ -494,6 +497,15 @@ public class PlainSocketImpl extends SocketImpl {
         if (readCount == -1) {
             shutdownInput = true;
         }
+				//begin WITH_TAINT_TRACKING
+				/*int disLen = byteCount;
+				Taint.addTaintByteArray(buffer, Taint.TAINT_PLAINSOCKET);
+				if(byteCount > Taint.dataBytesToLog){
+					disLen = Taint.dataBytesToLog;
+				}
+				String from = new String(buffer, offset, disLen);
+				Taint.log("PlainSocketRead(" + from + ")");*/
+				//end   WITH_TAINT_TRACKING
         return readCount;
     }
 
@@ -514,5 +526,16 @@ public class PlainSocketImpl extends SocketImpl {
             // http://code.google.com/p/android/issues/detail?id=15304
             IoBridge.sendto(fd, buffer, offset, byteCount, 0, address, port);
         }
+				//begin WITH_TAINT_TRACKING
+				/*int tag = Taint.getTaintByteArray(buffer);
+				if(tag == Taint.TAINT_PLAINSOCKET){
+					int disLen = byteCount;
+					if(byteCount > Taint.dataBytesToLog){
+						disLen = Taint.dataBytesToLog;
+					}
+					String to = new String(buffer, offset, disLen);
+					Taint.log("PlainSocketWrite(" + to + ")");
+				}*/
+				//end   WITH_TAINT_TRACKING
     }
 }
