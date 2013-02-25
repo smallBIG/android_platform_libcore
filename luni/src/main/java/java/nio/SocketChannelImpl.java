@@ -47,10 +47,6 @@ import libcore.io.Libcore;
 import libcore.io.IoBridge;
 import libcore.io.IoUtils;
 import static libcore.io.OsConstants.*;
-// begin WITH_TAINT_TRACKING
-import dalvik.system.Taint;
-import java.nio.charset.*;
-// end WITH_TAINT_TRACKING
 
 /*
  * The default implementation class of java.nio.channels.SocketChannel.
@@ -90,10 +86,6 @@ class SocketChannelImpl extends SocketChannel implements FileDescriptorChannel {
 
     private final Object writeLock = new Object();
 
-		//begin WITH_TAINT_TRACKING
-		public static Charset charset = Charset.forName("UTF_8");
-		public static CharsetDecoder decoder = charset.newDecoder();
-		//end   WITH_TAINT_TRACKING
 
     /*
      * Constructor for creating a connected socket channel.
@@ -206,11 +198,6 @@ class SocketChannelImpl extends SocketChannel implements FileDescriptorChannel {
                 status = SOCKET_STATUS_PENDING;
             }
         }
-				//begin WITH_TAINT_TRACKING
-				String taintHost = connectAddress.getHostName();
-				int    taintPort = connectAddress.getPort();
-				Taint.log("SocketChannelImpl->connect   " + taintHost + ": " + taintPort);
-				//end   WITH_TAINT_TRACKING
         return finished;
     }
 
@@ -279,22 +266,6 @@ class SocketChannelImpl extends SocketChannel implements FileDescriptorChannel {
             return 0;
         }
 				int result = readImpl(dst);
-						//begin WITH_TAINT_TRACKING
-						/*
-						int old_position = dst.position();
-
-						dst.flip();
-						int messageLen = dst.getInt();
-						dst.clear();
-						ByteBuffer clone = ByteBuffer.allocate(messageLen);
-						int read = 0;
-						while(read != messageLen){
-							read += 
-						}
-
-						dst.position(old_position); */
-						Taint.addTaintDirectByteBuffer(dst, Taint.TAINT_SOCKETCHANNEL);
-						//end   WITH_TAINT_TRACKING	
         return result;
     }
 
@@ -311,14 +282,6 @@ class SocketChannelImpl extends SocketChannel implements FileDescriptorChannel {
         int readCount;
         // read data to readBuffer, and then transfer data from readBuffer to targets.
         readCount = readImpl(readBuffer);
-						//begin WITH_TAINT_TRACKING
-						/*
-						int old_position = readBuffer.position();
-						String data = decoder.decode(readBuffer).toString();
-						readBuffer.position(old_position);
-						Taint.addTaintDirectByteBuffer(readBuffer, Taint.TAINT_SOCKETCHANNEL);
-						*/
-						//end   WITH_TAINT_TRACKING
         readBuffer.flip();
         if (readCount > 0) {
             int left = readCount;
@@ -327,9 +290,6 @@ class SocketChannelImpl extends SocketChannel implements FileDescriptorChannel {
             while (left > 0) {
                 int putLength = Math.min(targets[index].remaining(), left);
                 targets[index].put(readArray, readCount - left, putLength);
-								//begin WITH_TAINT_TRACKING
-								Taint.addTaintDirectByteBuffer(targets[index], Taint.TAINT_SOCKETCHANNEL);
-								//end   WITH_TAINT_TRACKING
                 index++;
                 left -= putLength;
             }
@@ -366,26 +326,6 @@ class SocketChannelImpl extends SocketChannel implements FileDescriptorChannel {
         if (!src.hasRemaining()) {
             return 0;
         }
-						//begin WITH_TAINT_TRACKING
-						/*
-						int tag = Taint.getTaintDirectByteBuffer(src);
-						if(tag == Taint.TAINT_SOCKETCHANNEL){
-							int old_position = src.position();
-							String data = decoder.decode(src).toString();
-							src.position(old_position);
-							Taint.log("SocketChannelImpl->write: " + data);
-						}
-						*/
-						int tag = Taint.getTaintDirectByteBuffer(src);
-						if(tag != Taint.TAINT_CLEAR){
-							byte[] data = src.array();
-							String dstr = new String(data);
-							dstr = dstr.replaceAll("\\p{C}",".");
-							String addr = (fd.hasName) ? fd.name : "unknow";
-							String tstr = "0x" + Integer.toHexString(tag);
-							Taint.log("SocketChannelImpl.write(" + addr + ") received data with tag " + tstr + " data=[" + dstr + "]");
-						}
-						//end   WITH_TAINT_TRACKING
 				int result = writeImpl(src);
         return result;
     }
@@ -401,27 +341,10 @@ class SocketChannelImpl extends SocketChannel implements FileDescriptorChannel {
         ByteBuffer writeBuf = ByteBuffer.allocate(count);
         for (int val = offset; val < length + offset; val++) {
             ByteBuffer source = sources[val];
-						//begin WITH_TAINT_TRACKING
-						int tag = Taint.getTaintDirectByteBuffer(source);
-						if(tag != Taint.TAINT_CLEAR){
-							Taint.addTaintDirectByteBuffer(writeBuf, tag);
-						}
-						//end   WITH_TAINT_TRACKING
             int oldPosition = source.position();
             writeBuf.put(source);
             source.position(oldPosition);
         }
-						//begin WITH_TAINT_TRACKING
-						int tag = Taint.getTaintDirectByteBuffer(writeBuf);
-						if(tag != Taint.TAINT_CLEAR){
-							byte[] data = writeBuf.array();
-							String dstr = new String(data);
-							dstr = dstr.replaceAll("\\p{C}",".");
-							String addr = (fd.hasName) ? fd.name : "unknow";
-							String tstr = "0x" + Integer.toHexString(tag);
-							Taint.log("SocketChannelImpl.write(" + addr + ") received data with tag " + tstr + " data=[" + dstr + "]");
-						}
-						//end   WITH_TAINT_TRACKING
         writeBuf.flip();
         int result = writeImpl(writeBuf);
         int val = offset;

@@ -659,11 +659,7 @@ public class OpenSSLSocketImpl
          */
         @Override
         public int read() throws IOException {
-						int result = Streams.readSingleByte(this);
-						//begin WITH_TAINT_TRACKING
-						Taint.addTaintInt(result, Taint.TAINT_SSLSOCKET);
-						//end   WITH_TAINT_TRACKING 
-            return result;
+						return Streams.readSingleByte(this);
         }
 
         /**
@@ -679,9 +675,6 @@ public class OpenSSLSocketImpl
                 if (byteCount == 0) {
                     return 0;
                 }
-								//begin WITH_TAINT_TRACKING
-								Taint.addTaintByteArray(buf, Taint.TAINT_SSLSOCKET);
-								//end   WITH_TAINT_TRACKING
                 return NativeCrypto.SSL_read(sslNativePointer, socket.getFileDescriptor$(),
                         OpenSSLSocketImpl.this, buf, offset, byteCount, getSoTimeout());
             }
