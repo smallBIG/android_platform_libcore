@@ -18,6 +18,9 @@
 package java.io;
 
 import java.util.Arrays;
+// begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
 
 /**
  * A writable sink for bytes.
@@ -46,6 +49,13 @@ import java.util.Arrays;
  * @see InputStream
  */
 public abstract class OutputStream implements Closeable, Flushable {
+
+		//begin  WITH_TAINT_TRACKING
+		private int taint;
+
+		public int getTaint(){ return taint; }
+		public void setTaint(int t){ taint = t; }
+		//end    WITH_TAINT_TRACKING
 
     /**
      * Default constructor.
@@ -105,6 +115,21 @@ public abstract class OutputStream implements Closeable, Flushable {
         for (int i = offset; i < offset + count; i++) {
             write(buffer[i]);
         }
+				//begin  WITH_TAINT_TRACKING
+				int taint = Taint.getTaintByteArray(buffer);
+				if(taint != 0){
+        	int disLen = count;
+          if (count > Taint.dataBytesToLog) {
+          	disLen = Taint.dataBytesToLog;
+					}
+          String dstr = new String(buffer, offset, disLen);
+          // We only display at most Taint.dataBytesToLog characters in logcat
+          // replace non-printable characters
+          dstr = dstr.replaceAll("\\p{C}", ".");
+          String tstr = "0x" + Integer.toHexString(taint);
+          Taint.log("SESAME OutputStream#write " + dstr + " " + tstr);
+				}
+				//end    WITH_TAINT_TRACKING
     }
 
     /**

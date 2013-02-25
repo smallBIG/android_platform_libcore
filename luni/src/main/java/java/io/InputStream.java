@@ -19,6 +19,9 @@ package java.io;
 
 import java.util.Arrays;
 import libcore.io.Streams;
+// begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
 
 /**
  * A readable source of bytes.
@@ -52,6 +55,13 @@ import libcore.io.Streams;
  * @see OutputStream
  */
 public abstract class InputStream extends Object implements Closeable {
+		
+		//begin	 WITH_TAINT_TRACKING
+		private int taint;
+
+		public int getTaint(){ return taint; }
+		public void setTaint(int t){ taint = t; }
+		//end    WITH_TAINT_TRACKING
 
     /**
      * This constructor does nothing. It is provided for signature
@@ -199,6 +209,21 @@ public abstract class InputStream extends Object implements Closeable {
             }
             buffer[offset + i] = (byte) c;
         }
+				//begin  WITH_TAINT_TRACKING
+				if(taint != 0){
+					Taint.addTaintByteArray(buffer, taint);
+        	int disLen = length;
+          if (length > Taint.dataBytesToLog) {
+          	disLen = Taint.dataBytesToLog;
+					}
+          String dstr = new String(buffer, offset, disLen);
+          // We only display at most Taint.dataBytesToLog characters in logcat
+          // replace non-printable characters
+          dstr = dstr.replaceAll("\\p{C}", ".");
+          String tstr = "0x" + Integer.toHexString(taint);
+          Taint.log("SESAME InputStream#read " + dstr + " " + tstr);
+				}
+				//end    WITH_TAINT_TRACKING
         return length;
     }
 

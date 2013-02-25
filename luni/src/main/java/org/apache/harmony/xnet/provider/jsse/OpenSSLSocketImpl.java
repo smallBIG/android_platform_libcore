@@ -659,7 +659,11 @@ public class OpenSSLSocketImpl
          */
         @Override
         public int read() throws IOException {
-						return Streams.readSingleByte(this);
+						//return Streams.readSingleByte(this);
+						//begin WITH_TAINT_TRACKING
+						int result = Streams.readSingleByte(this);
+						return result;
+						//end   WITH_TAINT_TRACKING
         }
 
         /**
@@ -715,10 +719,7 @@ public class OpenSSLSocketImpl
                 String addr = (fd.hasName) ? fd.name : "unknown";
                 String tstr = "0x" + Integer.toHexString(tag);
                 Taint.log("SSLOutputStream.write(" + addr + ") received data with tag " + tstr + " data=[" + dstr + "]");
-            }else{
-							//add by chenxiong
-							//Taint.log("SSLOutputStream.write(" + dstr + ") --chenxiong");
-						}
+            }
 // end WITH_TAINT_TRACKING
             Streams.writeSingleByte(this, oneByte);
         }
@@ -751,10 +752,7 @@ public class OpenSSLSocketImpl
                     String addr = (fd.hasName) ? fd.name : "unknown";
                     String tstr = "0x" + Integer.toHexString(tag);
                     Taint.log("SSLOutputStream.write(" + addr + ") received data with tag " + tstr + " data=[" + dstr + "]");
-                }else{
-									//add by chenxiong
-									//Taint.log("SSLOutputStream.write(" + dstr + ") -- chenxiong");
-								}
+                }
 // end WITH_TAINT_TRACKING
                 NativeCrypto.SSL_write(sslNativePointer, socket.getFileDescriptor$(),
                         OpenSSLSocketImpl.this, buf, offset, byteCount);

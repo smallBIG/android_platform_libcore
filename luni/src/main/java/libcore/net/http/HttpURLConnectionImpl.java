@@ -36,6 +36,9 @@ import java.security.Permission;
 import java.util.List;
 import java.util.Map;
 import libcore.io.Base64;
+// begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
 
 /**
  * This implementation uses HttpEngine to send requests and receive responses.
@@ -178,6 +181,15 @@ class HttpURLConnectionImpl extends HttpURLConnection {
         }
 
         InputStream result = response.getResponseBody();
+
+				//begin  WITH_TAINT_TRACKING
+				String host = url.getHost();
+				if(host != null){
+					int taint = Taint.getTaintByHost(host);
+					result.setTaint(taint);
+				}
+				//end    WITH_TAINT_TRACKING
+				
         if (result == null) {
             throw new IOException("No response body exists; responseCode=" + getResponseCode());
         }
@@ -193,6 +205,14 @@ class HttpURLConnectionImpl extends HttpURLConnection {
         } else if (httpEngine.hasResponse()) {
             throw new ProtocolException("cannot write request body after response has been read");
         }
+
+				//begin  WITH_TAINT_TRACKING
+				String host = url.getHost();
+				if(host != null){
+					int taint = Taint.getTaintByHost(host);
+					result.setTaint(taint);
+				}
+				//end    WITH_TAINT_TRACKING
 
         return result;
     }

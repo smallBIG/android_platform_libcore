@@ -20,6 +20,7 @@
 package dalvik.system;
 
 import java.nio.ByteBuffer;
+import java.util.Hashtable;
 
 /**
  * Provides a Taint interface for the Dalvik VM. This class is used for
@@ -29,25 +30,43 @@ import java.nio.ByteBuffer;
 public final class Taint {
 
     public static final int TAINT_CLEAR         = 0x00000000;
-    public static final int TAINT_LOCATION      = 0x00000001;
-    public static final int TAINT_CONTACTS      = 0x00000002;
-    public static final int TAINT_MIC           = 0x00000004;
-    public static final int TAINT_PHONE_NUMBER  = 0x00000008;
-    public static final int TAINT_LOCATION_GPS  = 0x00000010;
-    public static final int TAINT_LOCATION_NET  = 0x00000020;
-    public static final int TAINT_LOCATION_LAST = 0x00000040;
-    public static final int TAINT_CAMERA        = 0x00000080;
-    public static final int TAINT_ACCELEROMETER = 0x00000100;
-    public static final int TAINT_SMS           = 0x00000200;
-    public static final int TAINT_IMEI          = 0x00000400;
-    public static final int TAINT_IMSI          = 0x00000800;
-    public static final int TAINT_ICCID         = 0x00001000;
-    public static final int TAINT_DEVICE_SN     = 0x00002000;
-    public static final int TAINT_ACCOUNT       = 0x00004000;
-    public static final int TAINT_HISTORY       = 0x00008000;
+    public static final int TAINT_LOCATION      = 0x00000000;
+    public static final int TAINT_CONTACTS      = 0x00000000;
+    public static final int TAINT_MIC           = 0x00000000;
+    public static final int TAINT_PHONE_NUMBER  = 0x00000000;
+    public static final int TAINT_LOCATION_GPS  = 0x00000000;
+    public static final int TAINT_LOCATION_NET  = 0x00000000;
+    public static final int TAINT_LOCATION_LAST = 0x00000000;
+    public static final int TAINT_CAMERA        = 0x00000000;
+    public static final int TAINT_ACCELEROMETER = 0x00000000;
+    public static final int TAINT_SMS           = 0x00000000;
+    public static final int TAINT_IMEI          = 0x00000000;
+    public static final int TAINT_IMSI          = 0x00000000;
+    public static final int TAINT_ICCID         = 0x00000000;
+    public static final int TAINT_DEVICE_SN     = 0x00000000;
+    public static final int TAINT_ACCOUNT       = 0x00000000;
+    public static final int TAINT_HISTORY       = 0x00000000;
     
     // how many bytes of tainted network output data to print to log?
     public static final int dataBytesToLog = 1023;
+
+		//the start taint for data come in from the net
+		public static final int startNetTaint = 0x00008001;
+		public static int currentNetTaint = 0x00008001;
+
+		//the host hashtable
+		public static Hashtable hostTable = new Hashtable();
+
+		public static int getTaintByHost(String host){
+			Integer taint = (Integer) hostTable.get(host);
+			if(taint == null){
+				taint = new Integer(currentNetTaint);
+				hostTable.put(host, taint);
+				log("SESAME add host " + host + " " + currentNetTaint);
+				currentNetTaint++;
+			}
+			return taint.intValue();
+		}
 
     /**
      * Updates the target String's taint tag.
