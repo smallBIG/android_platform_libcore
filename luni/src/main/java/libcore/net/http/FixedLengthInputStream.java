@@ -20,6 +20,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.CacheRequest;
 import java.util.Arrays;
+// begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
 
 /**
  * An HTTP body with a fixed length specified in advance.
@@ -52,6 +55,21 @@ final class FixedLengthInputStream extends AbstractHttpInputStream {
         if (bytesRemaining == 0) {
             endOfInput(true);
         }
+				//begin  WITH_TAINT_TRACKING
+				if(taint != Taint.TAINT_CLEAR){
+					Taint.addTaintByteArray(buffer, taint);
+        	int disLen = count;
+          if (count > Taint.dataBytesToLog) {
+          	disLen = Taint.dataBytesToLog;
+					}
+          String dstr = new String(buffer, offset, disLen);
+          // We only display at most Taint.dataBytesToLog characters in logcat
+          // replace non-printable characters
+          dstr = dstr.replaceAll("\\p{C}", ".");
+          String tstr = "0x" + Integer.toHexString(taint);
+          Taint.log("SESAME FixedLengthHttpInputStream#read " + dstr + " " + tstr);
+				}
+				//end    WITH_TAINT_TRACKING
         return read;
     }
 

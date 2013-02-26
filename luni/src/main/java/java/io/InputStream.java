@@ -57,7 +57,7 @@ import dalvik.system.Taint;
 public abstract class InputStream extends Object implements Closeable {
 		
 		//begin	 WITH_TAINT_TRACKING
-		private int taint;
+		protected int taint;
 
 		public int getTaint(){ return taint; }
 		public void setTaint(int t){ taint = t; }
@@ -210,7 +210,7 @@ public abstract class InputStream extends Object implements Closeable {
             buffer[offset + i] = (byte) c;
         }
 				//begin  WITH_TAINT_TRACKING
-				if(taint != 0){
+				if(taint != Taint.TAINT_CLEAR){
 					Taint.addTaintByteArray(buffer, taint);
         	int disLen = length;
           if (length > Taint.dataBytesToLog) {

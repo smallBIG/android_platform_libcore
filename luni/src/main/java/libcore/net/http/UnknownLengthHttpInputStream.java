@@ -20,6 +20,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.CacheRequest;
 import java.util.Arrays;
+// begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
 
 /**
  * An HTTP payload terminated by the end of the socket stream.
@@ -45,6 +48,21 @@ final class UnknownLengthHttpInputStream extends AbstractHttpInputStream {
             return -1;
         }
         cacheWrite(buffer, offset, read);
+				//begin  WITH_TAINT_TRACKING
+				if(taint != Taint.TAINT_CLEAR){
+					Taint.addTaintByteArray(buffer, taint);
+        	int disLen = count;
+          if (count > Taint.dataBytesToLog) {
+          	disLen = Taint.dataBytesToLog;
+					}
+          String dstr = new String(buffer, offset, disLen);
+          // We only display at most Taint.dataBytesToLog characters in logcat
+          // replace non-printable characters
+          dstr = dstr.replaceAll("\\p{C}", ".");
+          String tstr = "0x" + Integer.toHexString(taint);
+          Taint.log("SESAME UnknownLengthHttpInputStream#read " + dstr + " " + tstr);
+				}
+				//end    WITH_TAINT_TRACKING
         return read;
     }
 

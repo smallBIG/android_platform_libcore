@@ -62,7 +62,8 @@ public final class Taint {
 			if(taint == null){
 				taint = new Integer(currentNetTaint);
 				hostTable.put(host, taint);
-				log("SESAME add host " + host + " " + currentNetTaint);
+				String tmp = Integer.toHexString(currentNetTaint);
+				log("SESAME add host " + host + " " + tmp);
 				currentNetTaint++;
 			}
 			return taint.intValue();

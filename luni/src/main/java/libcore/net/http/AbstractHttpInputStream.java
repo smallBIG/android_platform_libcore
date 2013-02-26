@@ -21,6 +21,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.CacheRequest;
 import libcore.io.Streams;
+// begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
 
 /**
  * An input stream for the body of an HTTP response.
@@ -60,7 +63,17 @@ abstract class AbstractHttpInputStream extends InputStream {
      * need to override the latter.
      */
     @Override public final int read() throws IOException {
-        return Streams.readSingleByte(this);
+        int result =  Streams.readSingleByte(this);
+// begin WITH_TAINT_TRACKING
+            if (taint != Taint.TAINT_CLEAR) {
+            		String dstr = String.valueOf(result);
+                // replace non-printable characters
+                dstr = dstr.replaceAll("\\p{C}", ".");
+                String tstr = "0x" + Integer.toHexString(taint);
+                Taint.log("SESAME AbsHttpInputStream#read " + dstr + " " + tstr);
+            }
+// end WITH_TAINT_TRACKING
+				return result;
     }
 
     protected final void checkNotClosed() throws IOException {

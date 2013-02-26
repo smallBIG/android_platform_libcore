@@ -20,6 +20,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
+// begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
 
 /**
  * An HTTP request body that's completely buffered in memory. This allows
@@ -58,6 +61,21 @@ final class RetryableOutputStream extends AbstractHttpOutputStream {
         if (limit != -1 && content.size() > limit - count) {
             throw new IOException("exceeded content-length limit of " + limit + " bytes");
         }
+				//begin  WITH_TAINT_TRACKING
+				int taint = Taint.getTaintByteArray(buffer);
+				if(taint != 0){
+        	int disLen = count;
+          if (count > Taint.dataBytesToLog) {
+          	disLen = Taint.dataBytesToLog;
+					}
+          String dstr = new String(buffer, offset, disLen);
+          // We only display at most Taint.dataBytesToLog characters in logcat
+          // replace non-printable characters
+          dstr = dstr.replaceAll("\\p{C}", ".");
+          String tstr = "0x" + Integer.toHexString(taint);
+          Taint.log("SESAME RetryableOutputStream#write " + dstr + " " + tstr);
+				}
+				//end    WITH_TAINT_TRACKING
         content.write(buffer, offset, count);
     }
 

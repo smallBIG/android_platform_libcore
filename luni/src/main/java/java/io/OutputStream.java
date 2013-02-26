@@ -51,7 +51,7 @@ import dalvik.system.Taint;
 public abstract class OutputStream implements Closeable, Flushable {
 
 		//begin  WITH_TAINT_TRACKING
-		private int taint;
+		protected int taint;
 
 		public int getTaint(){ return taint; }
 		public void setTaint(int t){ taint = t; }

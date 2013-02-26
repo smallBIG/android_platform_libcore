@@ -21,6 +21,9 @@ import java.io.InputStream;
 import java.net.CacheRequest;
 import java.util.Arrays;
 import libcore.io.Streams;
+// begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
 
 /**
  * An HTTP body with alternating chunk sizes and chunk bodies.
@@ -67,6 +70,22 @@ final class ChunkedInputStream extends AbstractHttpInputStream {
         if (bytesRemainingInChunk == 0 && in.available() >= MIN_LAST_CHUNK_LENGTH) {
             readChunkSize();
         }
+
+				//begin  WITH_TAINT_TRACKING
+				if(taint != Taint.TAINT_CLEAR){
+					Taint.addTaintByteArray(buffer, taint);
+        	int disLen = count;
+          if (count > Taint.dataBytesToLog) {
+          	disLen = Taint.dataBytesToLog;
+					}
+          String dstr = new String(buffer, offset, disLen);
+          // We only display at most Taint.dataBytesToLog characters in logcat
+          // replace non-printable characters
+          dstr = dstr.replaceAll("\\p{C}", ".");
+          String tstr = "0x" + Integer.toHexString(taint);
+          Taint.log("SESAME ChunkedInputStream#read " + dstr + " " + tstr);
+				}
+				//end    WITH_TAINT_TRACKING
 
         return read;
     }
