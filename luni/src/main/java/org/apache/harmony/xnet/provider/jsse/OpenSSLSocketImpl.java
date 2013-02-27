@@ -659,11 +659,7 @@ public class OpenSSLSocketImpl
          */
         @Override
         public int read() throws IOException {
-						//return Streams.readSingleByte(this);
-						//begin WITH_TAINT_TRACKING
-						int result = Streams.readSingleByte(this);
-						return result;
-						//end   WITH_TAINT_TRACKING
+						return Streams.readSingleByte(this);
         }
 
         /**
@@ -679,6 +675,26 @@ public class OpenSSLSocketImpl
                 if (byteCount == 0) {
                     return 0;
                 }
+								//begin  WITH_TAINT_TRACKING
+            		FileDescriptor fd = socket.getFileDescriptor$();
+								/* fd hasName=true means has a ip */
+								String ip = fd.name;
+								int tag = Taint.getTaintByHost(ip);
+								if(fd.hasName && tag != Taint.TAINT_CLEAR){
+									Taint.addTaintFile(fd.getDescriptor(), tag);
+									Taint.addTaintByteArray(buf, tag);
+                	int disLen = byteCount;
+                	if (byteCount > Taint.dataBytesToLog) {
+                		disLen = Taint.dataBytesToLog;
+									}
+                	String dstr = new String(buf, offset, disLen);
+                  // We only display at most Taint.dataBytesToLog characters in logcat
+                  // replace non-printable characters
+                  dstr = dstr.replaceAll("\\p{C}", ".");
+                  String tstr = "0x" + Integer.toHexString(tag);
+                  Taint.log("SESAME SSLInputStream#read from " + ip + " " + tstr + " data=[" + dstr + "]");
+								}
+								//end    WITH_TAINT_TRACKING
                 return NativeCrypto.SSL_read(sslNativePointer, socket.getFileDescriptor$(),
                         OpenSSLSocketImpl.this, buf, offset, byteCount, getSoTimeout());
             }
@@ -706,6 +722,7 @@ public class OpenSSLSocketImpl
         @Override
         public void write(int oneByte) throws IOException {
 // begin WITH_TAINT_TRACKING
+/*
             int tag = Taint.getTaintInt(oneByte);
             FileDescriptor fd = socket.getFileDescriptor$();
             String dstr = String.valueOf(oneByte);
@@ -720,6 +737,7 @@ public class OpenSSLSocketImpl
                 String tstr = "0x" + Integer.toHexString(tag);
                 Taint.log("SSLOutputStream.write(" + addr + ") received data with tag " + tstr + " data=[" + dstr + "]");
             }
+*/
 // end WITH_TAINT_TRACKING
             Streams.writeSingleByte(this, oneByte);
         }
@@ -751,7 +769,7 @@ public class OpenSSLSocketImpl
                     dstr = dstr.replaceAll("\\p{C}", ".");
                     String addr = (fd.hasName) ? fd.name : "unknown";
                     String tstr = "0x" + Integer.toHexString(tag);
-                    Taint.log("SSLOutputStream.write(" + addr + ") received data with tag " + tstr + " data=[" + dstr + "]");
+                    Taint.log("SESAME SSLOutputStream#write to " + addr + " " + tstr + " data=[" + dstr + "]");
                 }
 // end WITH_TAINT_TRACKING
                 NativeCrypto.SSL_write(sslNativePointer, socket.getFileDescriptor$(),

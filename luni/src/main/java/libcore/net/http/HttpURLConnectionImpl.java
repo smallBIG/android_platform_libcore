@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 import libcore.io.Base64;
 // begin WITH_TAINT_TRACKING
-import dalvik.system.Taint;
+//import dalvik.system.Taint;
 // end WITH_TAINT_TRACKING
 
 /**
@@ -183,11 +183,13 @@ class HttpURLConnectionImpl extends HttpURLConnection {
         InputStream result = response.getResponseBody();
 
 				//begin  WITH_TAINT_TRACKING
+				/*
 				String host = url.getHost();
 				if(host != null){
 					int taint = Taint.getTaintByHost(host);
 					result.setTaint(taint);
 				}
+				*/
 				//end    WITH_TAINT_TRACKING
 				
         if (result == null) {
@@ -207,11 +209,13 @@ class HttpURLConnectionImpl extends HttpURLConnection {
         }
 
 				//begin  WITH_TAINT_TRACKING
+				/*
 				String host = url.getHost();
 				if(host != null){
 					int taint = Taint.getTaintByHost(host);
 					result.setTaint(taint);
 				}
+				*/
 				//end    WITH_TAINT_TRACKING
 
         return result;

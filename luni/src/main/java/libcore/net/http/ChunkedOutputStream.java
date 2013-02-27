@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
 // begin WITH_TAINT_TRACKING
-import dalvik.system.Taint;
+//import dalvik.system.Taint;
 // end WITH_TAINT_TRACKING
 
 /**
@@ -69,6 +69,7 @@ final class ChunkedOutputStream extends AbstractHttpOutputStream {
         Arrays.checkOffsetAndCount(buffer.length, offset, count);
 
 				//begin  WITH_TAINT_TRACKING
+				/*
 				int taint = Taint.getTaintByteArray(buffer);
 				if(taint != 0){
         	int disLen = count;
@@ -82,6 +83,7 @@ final class ChunkedOutputStream extends AbstractHttpOutputStream {
           String tstr = "0x" + Integer.toHexString(taint);
           Taint.log("SESAME ChunkedOutputStream#write " + dstr + " " + tstr);
 				}
+				*/
 				//end    WITH_TAINT_TRACKING
 
         while (count > 0) {

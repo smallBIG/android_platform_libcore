@@ -20,7 +20,7 @@ package java.io;
 import java.util.Arrays;
 import libcore.io.Streams;
 // begin WITH_TAINT_TRACKING
-import dalvik.system.Taint;
+//import dalvik.system.Taint;
 // end WITH_TAINT_TRACKING
 
 /**
@@ -57,10 +57,12 @@ import dalvik.system.Taint;
 public abstract class InputStream extends Object implements Closeable {
 		
 		//begin	 WITH_TAINT_TRACKING
+		/*
 		protected int taint;
 
 		public int getTaint(){ return taint; }
 		public void setTaint(int t){ taint = t; }
+		*/
 		//end    WITH_TAINT_TRACKING
 
     /**
@@ -210,6 +212,7 @@ public abstract class InputStream extends Object implements Closeable {
             buffer[offset + i] = (byte) c;
         }
 				//begin  WITH_TAINT_TRACKING
+				/*
 				if(taint != Taint.TAINT_CLEAR){
 					Taint.addTaintByteArray(buffer, taint);
         	int disLen = length;
@@ -223,6 +226,7 @@ public abstract class InputStream extends Object implements Closeable {
           String tstr = "0x" + Integer.toHexString(taint);
           Taint.log("SESAME InputStream#read " + dstr + " " + tstr);
 				}
+				*/
 				//end    WITH_TAINT_TRACKING
         return length;
     }

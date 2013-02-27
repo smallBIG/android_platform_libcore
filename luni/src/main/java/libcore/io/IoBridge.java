@@ -37,6 +37,9 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import static libcore.io.OsConstants.*;
 import libcore.util.MutableInt;
+// begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
 
 /**
  * Implements java.io/java.net/java.nio semantics in terms of the underlying POSIX system calls.
@@ -428,6 +431,14 @@ public final class IoBridge {
         if (byteCount == 0) {
             return 0;
         }
+				//begin  WITH_TAINT_TRACKING
+				/*
+				String ip = (fd.hasName) ? fd.name : null;
+				if(ip != null){
+					Taint.log("SESAME IoBridge#read " + ip);
+				}
+				*/
+				//end    WITH_TAINT_TRACKING
         try {
             int readCount = Libcore.os.read(fd, bytes, byteOffset, byteCount);
             if (readCount == 0) {
@@ -452,6 +463,14 @@ public final class IoBridge {
         if (byteCount == 0) {
             return;
         }
+				//begin  WITH_TAINT_TRACKING
+				/*
+				String ip = (fd.hasName) ? fd.name : null;
+				if(ip != null){
+					Taint.log("SESAME IoBridge#write " + ip);
+				}
+				*/
+				//end    WITH_TAINT_TRACKING
         try {
             while (byteCount > 0) {
                 int bytesWritten = Libcore.os.write(fd, bytes, byteOffset, byteCount);
@@ -468,6 +487,14 @@ public final class IoBridge {
         if (!isDatagram && byteCount <= 0) {
             return 0;
         }
+				//begin  WITH_TAINT_TRACKING
+				/*
+				String ip = (fd.hasName) ? fd.name : null;
+				if(ip != null){
+					Taint.log("SESAME IoBridge#sendto " + ip);
+				}
+				*/
+				//end    WITH_TAINT_TRACKING
         int result;
         try {
             result = Libcore.os.sendto(fd, bytes, byteOffset, byteCount, flags, inetAddress, port);
@@ -483,6 +510,14 @@ public final class IoBridge {
             return 0;
         }
         int result;
+				//begin  WITH_TAINT_TRACKING
+				/*
+				String ip = (fd.hasName) ? fd.name : null;
+				if(ip != null){
+					Taint.log("SESAME IoBridge#sendto " + ip);
+				}
+				*/
+				//end    WITH_TAINT_TRACKING
         try {
             result = Libcore.os.sendto(fd, buffer, flags, inetAddress, port);
         } catch (ErrnoException errnoException) {
@@ -508,6 +543,14 @@ public final class IoBridge {
 
     public static int recvfrom(boolean isRead, FileDescriptor fd, byte[] bytes, int byteOffset, int byteCount, int flags, DatagramPacket packet, boolean isConnected) throws IOException {
         int result;
+				//begin  WITH_TAINT_TRACKING
+				/*
+				String ip = (fd.hasName) ? fd.name : null;
+				if(ip != null){
+					Taint.log("SESAME IoBridge#recvfrom " + ip);
+				}
+				*/
+				//end    WITH_TAINT_TRACKING
         try {
             InetSocketAddress srcAddress = (packet != null && !isConnected) ? new InetSocketAddress() : null;
             result = Libcore.os.recvfrom(fd, bytes, byteOffset, byteCount, flags, srcAddress);
@@ -520,6 +563,14 @@ public final class IoBridge {
 
     public static int recvfrom(boolean isRead, FileDescriptor fd, ByteBuffer buffer, int flags, DatagramPacket packet, boolean isConnected) throws IOException {
         int result;
+				//begin  WITH_TAINT_TRACKING
+				/*
+				String ip = (fd.hasName) ? fd.name : null;
+				if(ip != null){
+					Taint.log("SESAME IoBridge#recvfrom " + ip);
+				}
+				*/
+				//end    WITH_TAINT_TRACKING
         try {
             InetSocketAddress srcAddress = (packet != null && !isConnected) ? new InetSocketAddress() : null;
             result = Libcore.os.recvfrom(fd, buffer, flags, srcAddress);

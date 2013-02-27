@@ -21,7 +21,7 @@ import java.io.InputStream;
 import java.net.CacheRequest;
 import java.util.Arrays;
 // begin WITH_TAINT_TRACKING
-import dalvik.system.Taint;
+//import dalvik.system.Taint;
 // end WITH_TAINT_TRACKING
 
 /**
@@ -56,6 +56,7 @@ final class FixedLengthInputStream extends AbstractHttpInputStream {
             endOfInput(true);
         }
 				//begin  WITH_TAINT_TRACKING
+				/*
 				if(taint != Taint.TAINT_CLEAR){
 					Taint.addTaintByteArray(buffer, taint);
         	int disLen = count;
@@ -69,6 +70,7 @@ final class FixedLengthInputStream extends AbstractHttpInputStream {
           String tstr = "0x" + Integer.toHexString(taint);
           Taint.log("SESAME FixedLengthHttpInputStream#read " + dstr + " " + tstr);
 				}
+				*/
 				//end    WITH_TAINT_TRACKING
         return read;
     }

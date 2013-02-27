@@ -21,6 +21,7 @@ package dalvik.system;
 
 import java.nio.ByteBuffer;
 import java.util.Hashtable;
+import java.util.ArrayList;
 
 /**
  * Provides a Taint interface for the Dalvik VM. This class is used for
@@ -56,15 +57,27 @@ public final class Taint {
 
 		//the host hashtable
 		public static Hashtable hostTable = new Hashtable();
+		//the black list
+		public static ArrayList<String> blist = new ArrayList<String>(){{
+			add("74.125");
+			add("202.40");
+		}};
 
-		public static int getTaintByHost(String host){
+		public static synchronized int getTaintByHost(String host){
+			int size = blist.size();
+			for(int i = 0; i < size; i++){
+				String element = blist.get(i);
+				if(host.startsWith(element))
+					return TAINT_CLEAR;
+			}
+
 			Integer taint = (Integer) hostTable.get(host);
 			if(taint == null){
-				taint = new Integer(currentNetTaint);
+				int hashCode = host.hashCode();
+				taint = new Integer(hashCode);
 				hostTable.put(host, taint);
-				String tmp = Integer.toHexString(currentNetTaint);
+				String tmp = Integer.toHexString(hashCode);
 				log("SESAME add host " + host + " " + tmp);
-				currentNetTaint++;
 			}
 			return taint.intValue();
 		}
