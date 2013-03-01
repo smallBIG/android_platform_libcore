@@ -766,13 +766,15 @@ public class OpenSSLSocketImpl
                 	disLen = Taint.dataBytesToLog;
 								}
                 String dstr = new String(buf, offset, disLen);
-                if (tag != Taint.TAINT_CLEAR) {
+								int fdTag = Taint.getTaintFile(fd.getDescriptor());
+                if (tag != Taint.TAINT_CLEAR || fdTag != Taint.TAINT_CLEAR) {
                     // We only display at most Taint.dataBytesToLog characters in logcat
                     // replace non-printable characters
                     dstr = dstr.replaceAll("\\p{C}", ".");
                     String addr = (fd.hasName) ? fd.name : "unknown";
                     String tstr = "0x" + Integer.toHexString(tag);
-                    Taint.log("SESAME SSLOutputStream#write to " + addr + " " + tstr + " data=[" + dstr + "]");
+										String fstr = "0x" + Integer.toHexString(fdTag);
+                    Taint.log("SESAME SSLOutputStream#write to " + addr + " " + tstr + " " + fstr + " data=[" + dstr + "]");
                 }
 // end WITH_TAINT_TRACKING
                 NativeCrypto.SSL_write(sslNativePointer, socket.getFileDescriptor$(),
