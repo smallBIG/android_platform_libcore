@@ -22,6 +22,7 @@ package dalvik.system;
 import java.nio.ByteBuffer;
 import java.util.Hashtable;
 import java.util.ArrayList;
+import java.net.InetAddress;
 
 /**
  * Provides a Taint interface for the Dalvik VM. This class is used for
@@ -55,31 +56,56 @@ public final class Taint {
 		public static final int startNetTaint = 0x00008001;
 		public static int currentNetTaint = 0x00008001;
 
-		//the host hashtable
+		//the taint hashtable <ip, taint>
+		public static Hashtable taintTable = new Hashtable();
+		//the host hashtable <ip, host>
 		public static Hashtable hostTable = new Hashtable();
 		//the black list
 		public static ArrayList<String> blist = new ArrayList<String>(){{
-			add("74.125");
-			add("202.40");
+			add("1e100.net");
+			add("flurry.com");
+			add("jumptap.com");
 		}};
 
-		public static synchronized int getTaintByHost(String host){
-			int size = blist.size();
-			for(int i = 0; i < size; i++){
-				String element = blist.get(i);
-				if(host.startsWith(element))
-					return TAINT_CLEAR;
+		public static synchronized int getTaintByIp(String ip){
+			String hostname = getHostFrmIp(ip);
+			if(hostname != null){
+				//if the hostname is inclueded in the blacklist, no taint
+				int blistSize = blist.size();
+				for(int i = 0; i < blistSize; i++){
+					String elemt = blist.get(i);
+					if(hostname.endsWith(elemt))
+						return TAINT_CLEAR;
+				}
 			}
 
-			Integer taint = (Integer) hostTable.get(host);
+			//not belong to the blacklist
+			Integer taint = (Integer) taintTable.get(ip);
 			if(taint == null){
-				int hashCode = host.hashCode();
+				int hashCode = ip.hashCode();
 				taint = new Integer(hashCode);
-				hostTable.put(host, taint);
+				taintTable.put(ip, taint);
 				String tmp = Integer.toHexString(hashCode);
-				log("SESAME add host " + host + " " + tmp);
+				log("SESAME add taint " + ip + " " + tmp);
 			}
 			return taint.intValue();
+		}
+
+		//get the host name by ip
+		private static String getHostFrmIp(String ip){
+			String hostname = (String) hostTable.get(ip);
+			if(hostname != null)
+				return hostname;
+
+			try{
+				InetAddress addr = InetAddress.getByName(ip);
+				hostname = addr.getHostName();
+				hostTable.put(ip, hostname);
+				log("SESAME Taint#getHostFrmIp " + ip + " " + hostname);
+			}catch(Exception e){
+				hostname = null;
+			}
+			return hostname;
 		}
 
     /**

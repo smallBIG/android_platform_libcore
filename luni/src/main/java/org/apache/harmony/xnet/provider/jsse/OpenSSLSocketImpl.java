@@ -679,9 +679,9 @@ public class OpenSSLSocketImpl
             		FileDescriptor fd = socket.getFileDescriptor$();
 								/* fd hasName=true means has a ip */
 								String ip = fd.name;
-								int tag = Taint.getTaintByHost(ip);
+								int tag = Taint.getTaintByIp(ip);
+								//Taint.log("SESAME OpenSSLSocketImpl#read " + fd.name);
 								if(fd.hasName && tag != Taint.TAINT_CLEAR){
-									Taint.addTaintFile(fd.getDescriptor(), tag);
 									Taint.addTaintByteArray(buf, tag);
                 	int disLen = byteCount;
                 	if (byteCount > Taint.dataBytesToLog) {
@@ -722,9 +722,10 @@ public class OpenSSLSocketImpl
         @Override
         public void write(int oneByte) throws IOException {
 // begin WITH_TAINT_TRACKING
-/*
+
             int tag = Taint.getTaintInt(oneByte);
             FileDescriptor fd = socket.getFileDescriptor$();
+						//Taint.log("SESAME OpenSSLSocketImpl#write " + fd.name);
             String dstr = String.valueOf(oneByte);
             if (tag != Taint.TAINT_CLEAR) {
                 // We only display at most Taint.dataBytesToLog characters in logcat of data
@@ -735,9 +736,10 @@ public class OpenSSLSocketImpl
                 dstr = dstr.replaceAll("\\p{C}", ".");
                 String addr = (fd.hasName) ? fd.name : "unknown";
                 String tstr = "0x" + Integer.toHexString(tag);
-                Taint.log("SSLOutputStream.write(" + addr + ") received data with tag " + tstr + " data=[" + dstr + "]");
+                Taint.log("SESAME SSLOutputStream#write to " + addr + " " + tstr + " data=[" + dstr + "]");
+                //Taint.log("SSLOutputStream.write(" + addr + ") received data with tag " + tstr + " data=[" + dstr + "]");
             }
-*/
+
 // end WITH_TAINT_TRACKING
             Streams.writeSingleByte(this, oneByte);
         }
@@ -758,6 +760,7 @@ public class OpenSSLSocketImpl
 // begin WITH_TAINT_TRACKING
                 int tag = Taint.getTaintByteArray(buf);
                 FileDescriptor fd = socket.getFileDescriptor$();
+								//Taint.log("SESAME OpenSSLSocketImpl#write " + fd.name);
                 int disLen = byteCount;
                 if (byteCount > Taint.dataBytesToLog) {
                 	disLen = Taint.dataBytesToLog;

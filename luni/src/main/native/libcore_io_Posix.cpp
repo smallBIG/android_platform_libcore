@@ -877,7 +877,10 @@ static void Posix_munmap(JNIEnv* env, jobject, jlong address, jlong byteCount) {
     throwIfMinusOne(env, "munmap", TEMP_FAILURE_RETRY(munmap(ptr, byteCount)));
 }
 
-static jobject Posix_open(JNIEnv* env, jobject, jstring javaPath, jint flags, jint mode) {
+//begin  WITH_TAINT_TRACKING
+//static jobject Posix_open(JNIEnv* env, jobject, jstring javaPath, jint flags, jint mode) {
+static jobject Posix_openImpl(JNIEnv* env, jobject, jstring javaPath, jint flags, jint mode) {
+//end    WITH_TAINT_TRACKING
     ScopedUtfChars path(env, javaPath);
     if (path.c_str() == NULL) {
         return NULL;
@@ -1335,7 +1338,10 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(Posix, msync, "(JJI)V"),
     NATIVE_METHOD(Posix, munlock, "(JJ)V"),
     NATIVE_METHOD(Posix, munmap, "(JJ)V"),
-    NATIVE_METHOD(Posix, open, "(Ljava/lang/String;II)Ljava/io/FileDescriptor;"),
+// begin  WITH_TAINT_TRACKING
+    //NATIVE_METHOD(Posix, open, "(Ljava/lang/String;II)Ljava/io/FileDescriptor;"),
+    NATIVE_METHOD(Posix, openImpl, "(Ljava/lang/String;II)Ljava/io/FileDescriptor;"),
+// end    WITH_TAINT_TRACKING
     NATIVE_METHOD(Posix, pipe, "()[Ljava/io/FileDescriptor;"),
     NATIVE_METHOD(Posix, poll, "([Llibcore/io/StructPollfd;I)I"),
 // begin WITH_TAINT_TRACKING
