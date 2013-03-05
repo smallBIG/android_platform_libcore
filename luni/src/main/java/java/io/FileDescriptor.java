@@ -118,6 +118,12 @@ public final class FileDescriptor {
      */
     public String name = null;
 
+		/**
+		 * hack for save tag
+		 * @hide
+		 */
+		public int fTag = 0;
+
     /**
      * hack for setting file taint
      * @hide

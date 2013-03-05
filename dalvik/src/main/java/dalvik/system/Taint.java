@@ -48,6 +48,8 @@ public final class Taint {
     public static final int TAINT_DEVICE_SN     = 0x00000000;
     public static final int TAINT_ACCOUNT       = 0x00000000;
     public static final int TAINT_HISTORY       = 0x00000000;
+		public static final int TAINT_TEXTVIEW      = 0x11111111;
+		public static final int TAINT_EDITTEXT      = 0x22222222;
     
     // how many bytes of tainted network output data to print to log?
     public static final int dataBytesToLog = 1023;
@@ -86,7 +88,7 @@ public final class Taint {
 				taint = new Integer(hashCode);
 				taintTable.put(ip, taint);
 				String tmp = Integer.toHexString(hashCode);
-				log("SESAME add taint " + ip + " " + tmp);
+				log("SESAME add taint " + ip + " 0x" + tmp);
 			}
 			return taint.intValue();
 		}
@@ -103,7 +105,8 @@ public final class Taint {
 				hostTable.put(ip, hostname);
 				log("SESAME Taint#getHostFrmIp " + ip + " " + hostname);
 			}catch(Exception e){
-				hostname = null;
+				log("SESAME Taint#getHostFrmIp EXCEPTION");
+				hostname = ip;
 			}
 			return hostname;
 		}

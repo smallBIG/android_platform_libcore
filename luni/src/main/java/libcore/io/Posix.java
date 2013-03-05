@@ -44,12 +44,13 @@ public final class Posix implements Os {
         String addr = address.getHostAddress();
         if (addr != null) {
 						 Taint.log("SESAME Posix#connect " + addr);
-             fd.hasName = true;
-             fd.name = addr;
 						 //add the addr
 						 int tag = Taint.getTaintByIp(addr);
 						 if(tag != Taint.TAINT_CLEAR){
-						   Taint.addTaintFile(fd.getDescriptor(), tag);
+             		fd.hasName = true;
+             		fd.name = addr;
+								fd.fTag = tag;
+						   	//Taint.addTaintFile(fd.getDescriptor(), tag);
 						 }
     		}
       	connectImpl(fd, address, port);
@@ -105,7 +106,11 @@ public final class Posix implements Os {
     public native FileDescriptor openImpl(String path, int flags, int mode) throws ErrnoException;
     public FileDescriptor open(String path, int flags, int mode) throws ErrnoException{
 			FileDescriptor fd = openImpl(path, flags, mode);
-			Taint.log("SESAME Posix#open " + path + " " + fd.getDescriptor());
+			int fdInt = fd.getDescriptor();
+			Taint.log("SESAME Posix#open " + path + " " + fdInt);
+			int tag = Taint.getTaintFile(fdInt);
+			if(tag != Taint.TAINT_CLEAR)
+				fd.fTag = tag;
 			return fd;
 		}
 		//end    WITH_TAINT_TRACKING
@@ -131,17 +136,17 @@ public final class Posix implements Os {
         }
         int bytesRead = preadBytesImpl(fd, buffer, bufferOffset, byteCount, offset);
         int fdInt = fd.getDescriptor();
-        int tag = Taint.getTaintFile(fdInt);
+				int fdTag = fd.fTag;
 				//Taint.log("SESAME Posix#preadBytes " + fd.name);
-        if (tag != Taint.TAINT_CLEAR) {
+        if (fd.hasName || fdTag != Taint.TAINT_CLEAR) {
             String dstr = new String((byte[])buffer, bufferOffset, ((byteCount > Taint.dataBytesToLog) ? Taint.dataBytesToLog : byteCount));
             // replace non-printable characters
             dstr = dstr.replaceAll("\\p{C}", ".");
-            String tstr = "0x" + Integer.toHexString(tag);
+            String tstr = "0x" + Integer.toHexString(fdTag);
 						String addr = (fd.hasName) ? fd.name : "#" + fdInt;
             //Taint.log("libcore.os.read(" + fdInt + ") reading with tag " + tstr + " data[" + dstr + "]");
 						Taint.log("SESAME Posix#preadBytes from " + addr + " " + tstr + " data=[" + dstr + "]");
-            Taint.addTaintByteArray((byte[])buffer, tag);
+            Taint.addTaintByteArray((byte[])buffer, fdTag);
         }
         return bytesRead;
     }
@@ -150,15 +155,18 @@ public final class Posix implements Os {
         if (buffer.isDirect()) {
 // begin WITH_TAINT_TRACKING
             int tag = buffer.getDirectByteBufferTaint();
+            int fdInt = fd.getDescriptor();
+						int fdTag = fd.fTag;
 						//Taint.log("SESAME Posix#pwrite " + fd.name);
-            if (tag != Taint.TAINT_CLEAR) {
-                int fdInt = fd.getDescriptor();
+            if (tag != Taint.TAINT_CLEAR || fd.hasName || fdTag != Taint.TAINT_CLEAR) {
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
 								String addr = (fd.hasName) ? fd.name : "#" + fdInt;
                 //Taint.log("libcore.os.pwrite(" + fdInt + ") writing a direct ByteBuffer with tag " + tstr);
 								Taint.log("SESAME Posix#pwrite to " + addr + " " + tstr + " data=[ByteBuffer]");
-                Taint.addTaintFile(fdInt, tag);
+								if(!fd.hasName){
+                	Taint.addTaintFile(fdInt, tag);
+								}
             }
 // end WITH_TAINT_TRACKING
             return pwriteBytes(fd, buffer, buffer.position(), buffer.remaining(), offset);
@@ -181,8 +189,9 @@ public final class Posix implements Os {
         if (buffer instanceof byte[]) {
             int fdInt = fd.getDescriptor();
             int tag = Taint.getTaintByteArray((byte[]) buffer);
+						int fdTag = fd.fTag;
 						//Taint.log("SESAME Posix#pwriteBytes " + fd.name);
-            if (tag != Taint.TAINT_CLEAR) {
+            if (tag != Taint.TAINT_CLEAR || fd.hasName || fdTag != Taint.TAINT_CLEAR) {
                 String dstr = new String((byte[]) buffer, bufferOffset, ((byteCount > Taint.dataBytesToLog) ? Taint.dataBytesToLog : byteCount));
                 // replace non-printable characters
                 dstr = dstr.replaceAll("\\p{C}", ".");
@@ -191,7 +200,9 @@ public final class Posix implements Os {
 								String addr = (fd.hasName) ? fd.name : "#" + fdInt;
                 //Taint.log("libcore.os.pwrite(" + fdInt + ") writing with tag " + tstr + " data[" + dstr + "]");
 								Taint.log("SESAME Posix#pwriteBytes to " + addr + " " + tstr + " data=[" + dstr + "]");
-                Taint.addTaintFile(fdInt, tag);
+								if(!fd.hasName){
+                	Taint.addTaintFile(fdInt, tag);
+								}
             }
         }
         int bytesWritten = pwriteBytesImpl(fd, buffer, bufferOffset, byteCount, offset);
@@ -219,17 +230,17 @@ public final class Posix implements Os {
         }
         int bytesRead = readBytesImpl(fd, buffer, offset, byteCount);
         int fdInt = fd.getDescriptor();
-        int tag = Taint.getTaintFile(fdInt);
+        int fdTag = fd.fTag;
 				//Taint.log("SESAME Posix#readBytes " + fd.name);
-        if (tag != Taint.TAINT_CLEAR) {
+        if (fd.hasName || fdTag != Taint.TAINT_CLEAR) {
             String dstr = new String((byte[])buffer, offset, ((byteCount > Taint.dataBytesToLog) ? Taint.dataBytesToLog : byteCount));
             // replace non-printable characters
             dstr = dstr.replaceAll("\\p{C}", ".");
-            String tstr = "0x" + Integer.toHexString(tag);
+            String tstr = "0x" + Integer.toHexString(fdTag);
 						String addr = (fd.hasName) ? fd.name : "#" + fdInt;
 						Taint.log("SESAME Posix#readBytes from " + addr + " " + tstr + " data=[" + dstr + "]");
             //Taint.log("libcore.os.read(" + fdInt + ") reading with tag " + tstr + " data[" + dstr + "]");
-            Taint.addTaintByteArray((byte[])buffer, tag);
+            Taint.addTaintByteArray((byte[])buffer, fdTag);
         }
         return bytesRead;
     }
@@ -255,17 +266,17 @@ public final class Posix implements Os {
       }
 			int bytesRcvd = recvfromBytesImpl(fd, buffer, byteOffset, byteCount, flags, srcAddress);
       int fdInt = fd.getDescriptor();
-      int tag = Taint.getTaintFile(fdInt);
+      int fdTag = fd.fTag;
 			//Taint.log("SESAME Posix#recvfromBytes " + fd.name);
-      if (tag != Taint.TAINT_CLEAR) {
+      if (fd.hasName || fdTag != Taint.TAINT_CLEAR) {
       	String dstr = new String((byte[])buffer, byteOffset, ((byteCount > Taint.dataBytesToLog) ? Taint.dataBytesToLog : byteCount));
         // replace non-printable characters
         dstr = dstr.replaceAll("\\p{C}", ".");
-        String tstr = "0x" + Integer.toHexString(tag);
+        String tstr = "0x" + Integer.toHexString(fdTag);
 				String addr = (fd.hasName) ? fd.name : "#" + fdInt;
 				Taint.log("SESAME Posix#recvfromBytes from " + addr + " " + tstr + " data=[" + dstr + "]");
         //Taint.log("libcore.os.read(" + fdInt + ") reading with tag " + tstr + " data[" + dstr + "]");
-        Taint.addTaintByteArray((byte[])buffer, tag);
+        Taint.addTaintByteArray((byte[])buffer, fdTag);
       }
 			return bytesRcvd;
 		}
@@ -274,16 +285,16 @@ public final class Posix implements Os {
     public native void rename(String oldPath, String newPath) throws ErrnoException;
     public native long sendfile(FileDescriptor outFd, FileDescriptor inFd, MutableLong inOffset, long byteCount) throws ErrnoException;
     public int sendto(FileDescriptor fd, ByteBuffer buffer, int flags, InetAddress inetAddress, int port) throws ErrnoException {
-        if (buffer.isDirect()) {
+				int fdInt = fd.getDescriptor();
+				int fdTag = fd.fTag;
+        if (buffer.isDirect() || fd.hasName || fdTag != Taint.TAINT_CLEAR) {
 // begin WITH_TAINT_TRACKING
             int tag = buffer.getDirectByteBufferTaint();
 						//Taint.log("SESAME Posix#sendto " + fd.name);
-            if (tag != Taint.TAINT_CLEAR) {
-                String addr = (fd.hasName) ? fd.name : "#" + fd.getDescriptor();
+                String addr = (fd.hasName) ? fd.name : "#" + fdInt;
                 String tstr = "0x" + Integer.toHexString(tag);
 								Taint.log("SESAME Posix#sendto " + addr + " " + tstr + " data=[ByteBuffer]");
                 //Taint.log("libcore.os.sendto(" + addr + ") received a ByteBuffer with tag " + tstr);
-            }
 // end WITH_TAINT_TRACKING
             return sendtoBytes(fd, buffer, buffer.position(), buffer.remaining(), flags, inetAddress, port);
         } else {
@@ -302,15 +313,17 @@ public final class Posix implements Os {
 				//Taint.log("SESAME Posix#sendtoBytes " + fd.name);
         if (buffer instanceof byte[]) {
             int tag = Taint.getTaintByteArray((byte[]) buffer);
-    	    if (tag != Taint.TAINT_CLEAR) {
+						int fdInt = fd.getDescriptor();
+						int fdTag = Taint.getTaintFile(fdInt);
+    	    if (tag != Taint.TAINT_CLEAR || fd.hasName || fdTag != Taint.TAINT_CLEAR) {
                 String dstr = new String((byte[]) buffer, byteOffset, ((byteCount > Taint.dataBytesToLog) ? Taint.dataBytesToLog : byteCount));
                 // replace non-printable characters
                 dstr = dstr.replaceAll("\\p{C}", ".");
-                String addr = (fd.hasName) ? fd.name : "#" + fd.getDescriptor();
+                String addr = (fd.hasName) ? fd.name : "#" + fdInt;
     	        	String tstr = "0x" + Integer.toHexString(tag);
 								Taint.log("SESAME Posix#sendtoBytes to " + addr + " " + tstr + " data=[" + dstr + "]");
                 //Taint.log("libcore.os.send("+addr+") received data with tag " + tstr + " data=["+dstr+"] ");
-            }
+         	}
         }
 	return sendtoBytesImpl(fd, buffer, byteOffset, byteCount, flags, inetAddress, port);
     }
@@ -337,19 +350,20 @@ public final class Posix implements Os {
     public native StructUtsname uname();
     public native int waitpid(int pid, MutableInt status, int options) throws ErrnoException;
     public int write(FileDescriptor fd, ByteBuffer buffer) throws ErrnoException {
+        int fdInt = fd.getDescriptor();
+				int fdTag = fd.fTag;
         if (buffer.isDirect()) {
 // begin WITH_TAINT_TRACKING
             int tag = buffer.getDirectByteBufferTaint();
 						//Taint.log("SESAME Posix#write " + fd.name);
-            if (tag != Taint.TAINT_CLEAR) {
-                int fdInt = fd.getDescriptor();
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
 								String addr = (fd.hasName) ? fd.name : "#" + fdInt;
 								Taint.log("SESAME Posix#write to " + addr + " " + tstr + " data=[ByteBuffer]");
                 //Taint.log("libcore.os.write(" + fdInt + ") writing a direct ByteBuffer with tag " + tstr);
-                Taint.addTaintFile(fdInt, tag);
-            }
+								if(!fd.hasName){
+                	Taint.addTaintFile(fdInt, tag);
+								}
 // end WITH_TAINT_TRACKING
             return writeBytes(fd, buffer, buffer.position(), buffer.remaining());
         } else {
@@ -372,8 +386,9 @@ public final class Posix implements Os {
 				//Taint.log("SESAME Posix#writeBytes " + fd.name);
         if (buffer instanceof byte[]) {
             int fdInt = fd.getDescriptor();
+						int fdTag = fd.fTag;
             int tag = Taint.getTaintByteArray((byte[]) buffer);
-            if (tag != Taint.TAINT_CLEAR) {
+            if (tag != Taint.TAINT_CLEAR || fd.hasName || fdTag != Taint.TAINT_CLEAR) {
                 //We only display at most Taint.dataBytesToLog characters of the data in logcat, to avoid the overflow
                 String dstr = new String((byte[]) buffer, offset, ((byteCount > Taint.dataBytesToLog) ? Taint.dataBytesToLog : byteCount));
                 // replace non-printable characters
@@ -383,7 +398,9 @@ public final class Posix implements Os {
 								String addr = (fd.hasName) ? fd.name : "#" + fdInt;
 								Taint.log("SESAME Posix#writeBytes " + addr + " " + tstr + " data=[" + dstr + "]");
                 //Taint.log("libcore.os.write(" + fdInt + ") writing with tag " + tstr + " data[" + dstr + "]");
-                Taint.addTaintFile(fdInt, tag);
+								if(!fd.hasName){
+                	Taint.addTaintFile(fdInt, tag);
+								}
             }
         }
         int bytesWritten = writeBytesImpl(fd, buffer, offset, byteCount);
